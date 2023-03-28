@@ -1,17 +1,23 @@
+require_relative '../classes/score_list'
+
 class QuizTest < ApplicationRecord
     has_many :questions
     accepts_nested_attributes_for :questions
 
     def score(answers)
-        scored = []
+        score_list = ScoreList.new
+
         questions.each do |question|
-            answer = answers.detect{|x| x[:question_id] == question.id}
-            if answer == nil
-                raise "Missing answer for question #{question.id}"
-            end
-            scored.push({answer: answer, correct: answer[:choice_id] == question.correct_answer.id, correct_choice: question.correct_answer.id})
+            answer = find_answer_for_question(answers, question)
+            score_list.add_scored_question_to_response(question.score_question(answer))
         end
-        correct_size = scored.select{|x| x[:correct]}.size
-        {answers: scored, total_score: (correct_size.to_f / scored.size.to_f)}
+
+        score_list.respond_with_all_answers
+    end
+
+    private 
+
+    def find_answer_for_question(answers, question)
+        answers.detect{|x| x[:question_id] == question.id}
     end
 end

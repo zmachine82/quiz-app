@@ -1,3 +1,4 @@
+require_relative "../classes/question_factory"
 class QuizTestsController < ApplicationController
   before_action :set_quiz_test, only: %i[ show update destroy take_test ]
 
@@ -15,7 +16,16 @@ class QuizTestsController < ApplicationController
 
   # POST /quiz_tests
   def create
-    @quiz_test = QuizTest.new(quiz_test_params)    
+    @quiz_test = QuizTest.new(quiz_test_params)   
+
+    @quiz_test.questions.each do |question|
+      
+      q = QuestionFactory.get_question(question)
+       if !q.valid?
+         render json: {error: "#{question.text} of type #{question.question_type}, valid state: #{q.valid?}"}, status: :unprocessable_entity 
+         return
+        end
+    end
 
     if @quiz_test.save
       render json: @quiz_test, status: :created, location: @quiz_test
